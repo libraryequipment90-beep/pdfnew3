@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="en" class="dark scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rotate PDF - Free Online Tool | epdfconverter.com</title>
+    <meta name="description" content="Rotate PDF pages 90, 180 or 270 degrees. Free online PDF rotator.">
+    <meta name="keywords" content="rotate pdf, pdf orientation, epdfconverter, pdf tools">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://epdfconverter.com/tools/rotate-pdf.html">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="epdfconverter.com">
+    <meta property="og:title" content="Rotate PDF - Free Online Tool | epdfconverter.com">
+    <meta property="og:description" content="Rotate PDF pages 90, 180 or 270 degrees. Free online PDF rotator.">
+    <meta property="og:url" content="https://epdfconverter.com/tools/rotate-pdf.html">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Rotate PDF - Free Online Tool | epdfconverter.com">
+    <meta name="twitter:description" content="Rotate PDF pages 90, 180 or 270 degrees. Free online PDF rotator.">
+    
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Rotate PDF",
+      "url": "https://epdfconverter.com/tools/rotate-pdf.html",
+      "applicationCategory": "UtilitiesApplication",
+      "operatingSystem": "Any",
+      "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+      "description": "Rotate PDF pages 90, 180 or 270 degrees. Free online PDF rotator."
+    }
+    </script>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <!-- jsPDF for Client-side PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <!-- PDF.js for Reading & Rendering PDF Pages -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+
+    <!-- pdf-lib (Cantoo) for Merge / Split / Rotate / Encrypt / Copy Pages -->
+    <script src="https://unpkg.com/@cantoo/pdf-lib/dist/pdf-lib.min.js"></script>
+
+    <!-- JSZip for multi-file downloads (PDF to JPG, Split PDF) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <!-- Mammoth for Word (.docx) text extraction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        // Configure PDF.js Worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        accent: {
+                            red: '#ff4d4d',
+                            blue: '#3b82f6',
+                            green: '#10b981',
+                            amber: '#f59e0b',
+                            purple: '#a855f7',
+                            pink: '#ec4899',
+                            cyan: '#06b6d4',
+                            emerald: '#10b981'
+                        }
+                    },
+                    boxShadow: {
+                        'glow-brand': '0 0 25px -5px rgba(99, 102, 241, 0.4)',
+                        'glow-accent': '0 0 20px -3px rgba(236, 72, 153, 0.3)',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        .dark .glass-card {
+            background: rgba(17, 24, 39, 0.75);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        
+        .glass-nav {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+        }
+        .dark .glass-nav {
+            background: rgba(11, 15, 25, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #4f46e5 0%, #ec4899 50%, #f59e0b 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        .drag-active {
+            border-color: #6366f1 !important;
+            background-color: rgba(99, 102, 241, 0.15) !important;
+            transform: scale(1.01);
+        }
+
+        /* Canvas signature pad border */
+        canvas.sig-pad {
+            touch-action: none;
+            cursor: crosshair;
+        }
+
+        .pdf-edit-page {
+            position: relative;
+            display: inline-block;
+            background: #ffffff;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
+        }
+        .pdf-edit-page img {
+            display: block;
+            max-width: none;
+        }
+        .pdf-edit-text {
+            position: absolute;
+            margin: 0;
+            padding: 0 1px;
+            border: 1px dashed transparent;
+            background: transparent;
+            outline: none;
+            white-space: pre;
+            line-height: 1.05;
+            color: #111111;
+            cursor: text;
+            overflow: visible;
+            box-sizing: border-box;
+        }
+        .pdf-edit-text:hover {
+            border-color: #6366f1;
+            background: rgba(255, 255, 255, 0.55);
+        }
+        .pdf-edit-text:focus {
+            border-color: #4f46e5;
+            background: #ffffff;
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
+            z-index: 6;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-100 font-sans antialiased selection:bg-brand-500 selection:text-white min-h-screen flex flex-col justify-between transition-colors duration-300 overflow-x-hidden">
+
+    <header class="sticky top-0 z-40 glass-nav transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-20">
+                
+                <!-- Logo -->
+                <a href="../index.html" class="flex items-center space-x-3 group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-brand-600 via-accent-purple to-accent-pink p-0.5 shadow-glow-brand group-hover:scale-105 transition-transform duration-300">
+                        <div class="w-full h-full bg-slate-900 dark:bg-slate-950 rounded-[10px] flex items-center justify-center">
+                            <i data-lucide="file-text" class="w-6 h-6 text-brand-500 group-hover:rotate-6 transition-transform"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col">
+                        <span class="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white flex items-center">
+                            epdf<span class="text-brand-500">converter</span>
+                            <span class="text-xs font-semibold px-2 py-0.5 ml-2 rounded-full bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">.com</span>
+                        </span>
+                        <span class="text-[10px] text-slate-500 dark:text-slate-400 tracking-wider uppercase font-semibold">100% Client-Side Engine • Private & Free</span>
+                    </div>
+                </a>
+
+                <!-- Desktop Navigation Links -->
+                <nav class="hidden md:flex items-center space-x-1 lg:space-x-2">
+                    <a href="../index.html#top-tools" class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60 rounded-lg transition-all flex items-center gap-1.5">
+                        <i data-lucide="grid" class="w-4 h-4 text-brand-500"></i>
+                        All Tools (<span id="nav-tools-count">18</span>)
+                    </a>
+                    <a href="../index.html#quick-drop" class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60 rounded-lg transition-all flex items-center gap-1.5">
+                        <i data-lucide="zap" class="w-4 h-4 text-accent-amber"></i>
+                        Quick Convert
+                    </a>
+                    <a href="../index.html#faq" class="px-3 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:text-brand-600 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800/60 rounded-lg transition-all">
+                        FAQ
+                    </a>
+                </nav>
+
+                <!-- Actions: Theme Toggle & CTA -->
+                <div class="flex items-center space-x-3">
+                    <button id="theme-toggle" class="p-2.5 rounded-xl bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition" title="Toggle Light/Dark Theme">
+                        <i data-lucide="sun" class="w-5 h-5 hidden dark:block text-amber-400"></i>
+                        <i data-lucide="moon" class="w-5 h-5 block dark:hidden text-indigo-600"></i>
+                    </button>
+
+                    <a href="../index.html#top-tools" class="hidden sm:flex px-4 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-brand-600 to-accent-purple hover:from-brand-500 hover:to-accent-purple/90 rounded-xl shadow-lg shadow-brand-600/25 hover:scale-[1.02] active:scale-[0.98] transition-all items-center gap-2">
+                        <i data-lucide="sparkles" class="w-4 h-4"></i>
+                        Explore PDF Suite
+                    </a>
+
+                    <button id="mobile-menu-btn" type="button" class="md:hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white p-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-800">
+                        <i data-lucide="menu" class="w-6 h-6"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mobile Drawer -->
+        <div id="mobile-menu" class="hidden md:hidden bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 px-4 pt-2 pb-6 space-y-3">
+            <a href="../index.html#top-tools" class="mobile-nav-link block px-3 py-2.5 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800">
+                <i data-lucide="grid" class="w-4 h-4 inline mr-2 text-brand-500"></i> All Tools
+            </a>
+            <a href="../index.html#quick-drop" class="mobile-nav-link block px-3 py-2.5 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800">
+                <i data-lucide="zap" class="w-4 h-4 inline mr-2 text-accent-amber"></i> Quick Dropzone
+            </a>
+            <a href="../index.html#faq" class="mobile-nav-link block px-3 py-2.5 rounded-lg text-base font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-800">FAQ</a>
+        </div>
+    </header>
+
+    <main class="flex-grow">
+        
+        <section id="top-tools" class="relative pt-8 pb-12 overflow-hidden bg-slate-100/80 dark:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800/80">
+            <div class="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-brand-600/10 via-accent-purple/10 to-transparent blur-3xl pointer-events-none"></div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                
+                <div class="text-center max-w-3xl mx-auto mb-8">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-600 dark:text-brand-300 text-xs font-bold mb-4">
+                        <i data-lucide="shield-check" class="w-4 h-4 text-accent-green"></i>
+                        <span>Zero Server Storage • Instant Browser Engine</span>
+                    </div>
+                    <h1 class="text-3xl sm:text-5xl font-black tracking-tight leading-tight text-slate-900 dark:text-white">
+                        Complete <span class="gradient-text">PDF & Image Suite</span>
+                    </h1>
+                    <p class="mt-3 text-slate-600 dark:text-slate-400 text-base sm:text-lg">
+                        Select any tool to convert, edit, resize, compress to exact KB, sign, or reorder pages in your browser.
+                    </p>
+                </div>
+
+                <!-- Live Search and Category Pills -->
+                <div class="max-w-4xl mx-auto mb-8">
+                    <div class="relative w-full">
+                        <i data-lucide="search" class="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input 
+                            type="text" 
+                            id="tool-search" 
+                            placeholder="Search tools... (e.g. Image in KB, Resizer, Edit PDF, Sign PDF, Remove Page, Compress)" 
+                            class="w-full pl-11 pr-10 py-3.5 bg-white dark:bg-slate-900/90 border border-slate-300 dark:border-slate-700/80 rounded-2xl text-slate-900 dark:text-slate-100 placeholder-slate-400 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-500/30 transition text-sm shadow-sm"
+                        >
+                        <button id="clear-search" class="hidden absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-white p-1">
+                            <i data-lucide="x" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+
+                    <!-- Category Pills -->
+                    <div class="flex items-center justify-start sm:justify-center gap-2 mt-4 overflow-x-auto pb-2 text-xs font-semibold" id="filter-pills">
+                        <button class="pill-btn active px-4 py-2 rounded-xl bg-brand-600 text-white shadow-md transition whitespace-nowrap" data-filter="all">
+                            All Tools (<span id="total-tools-count">18</span>)
+                        </button>
+                        <button class="pill-btn px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition whitespace-nowrap" data-filter="image-tools">
+                            <i data-lucide="image" class="w-3.5 h-3.5 inline mr-1 text-accent-pink"></i> Image Tools
+                        </button>
+                        <button class="pill-btn px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition whitespace-nowrap" data-filter="edit-sign">
+                            <i data-lucide="pen-tool" class="w-3.5 h-3.5 inline mr-1 text-accent-amber"></i> Edit & Sign
+                        </button>
+                        <button class="pill-btn px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition whitespace-nowrap" data-filter="organize-pages">
+                            <i data-lucide="layout" class="w-3.5 h-3.5 inline mr-1 text-accent-cyan"></i> Organise Pages
+                        </button>
+                        <button class="pill-btn px-4 py-2 rounded-xl bg-slate-200 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition whitespace-nowrap" data-filter="convert">
+                            Convert PDF
+                        </button>
+                    </div>
+                </div>
+
+                <div id="tools-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+                    
+                    <!-- NEW TOOL 1: Image Convert in KB -->
+                    <a href="image-convert-kb.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="image-convert-kb" data-category="image-tools" data-title="Image Convert in KB target size limit compressed jpg png 50kb 100kb 200kb">
+                        <div class="absolute top-3 right-3">
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-accent-amber/20 text-accent-amber border border-accent-amber/30">New Tool</span>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-rose-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="gauge" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Image Convert in KB
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Compress and target exact file size limits (e.g. 20KB, 50KB, 100KB, 200KB).
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Target Exact KB</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- NEW TOOL 2: Image Resizer -->
+                    <a href="image-resizer.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="image-resizer" data-category="image-tools" data-title="Image Resizer change dimension width height pixels scale aspect ratio photo">
+                        <div class="absolute top-3 right-3">
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-accent-amber/20 text-accent-amber border border-accent-amber/30">New Tool</span>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="scaling" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Image Resizer
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Change pixel dimensions (width/height in px or %) with aspect ratio lock.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Resize Pixels</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- NEW TOOL 3: Edit PDF Tool -->
+                    <a href="edit-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="edit-pdf" data-category="edit-sign" data-title="Edit PDF Render text overlay add text edit layer write document">
+                        <div class="absolute top-3 right-3">
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-accent-purple/20 text-accent-purple border border-accent-purple/30">Interactive</span>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-edit" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Edit PDF Content
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Render existing pages, edit text, add custom text elements & re-export.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Edit Text Layers</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- NEW TOOL 4: Sign PDF Tool -->
+                    <a href="sign-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="sign-pdf" data-category="edit-sign" data-title="Sign PDF digital signature pad draw signature overlay document">
+                        <div class="absolute top-3 right-3">
+                            <span class="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-accent-green/20 text-accent-green border border-accent-green/30">Pad Ready</span>
+                        </div>
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="pen-tool" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Sign PDF Document
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Draw digital signature on touch/mouse canvas and place on PDF pages.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Sign & Place</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- NEW TOOL 5: Compress Image Tool -->
+                    <a href="compress-image.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="compress-image" data-category="image-tools" data-title="Compress Image reduce size quality preview webp jpg png photo">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="shrink" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Compress Image
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Adjust quality slider with live before/after size preview.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Reduce Image MB</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- NEW TOOL 6: Organise Page Tool -->
+                    <a href="organise-pages.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="organise-pages" data-category="organize-pages" data-title="Organise Page reorder rearrange pdf page grid visually">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="layout-grid" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Organise PDF Pages
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Drag & drop visual thumbnails to reorder pages in any sequence.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Reorder Pages</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- NEW TOOL 7: Remove Page Tool -->
+                    <a href="remove-pages.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer border-2 border-brand-500/30" data-tool-id="remove-pages" data-category="organize-pages" data-title="Remove Page delete specific pages thumbnail grid pdf">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="trash-2" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Remove PDF Pages
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Delete unwanted pages by clicking trash on visual page previews.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Delete Pages</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 8: JPG to PDF -->
+                    <a href="jpg-to-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="jpg-to-pdf" data-category="convert image-tools" data-title="JPG to PDF Image PNG photo convert create">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-600 to-pink-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-image" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                JPG to PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Convert JPG, PNG & WebP images into a formatted PDF document.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Image to PDF</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 9: Merge PDF -->
+                    <a href="merge-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="merge-pdf" data-category="convert organize-pages" data-title="Merge PDF Combine multiple documents bind">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-red-500 to-orange-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="layers" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Merge PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Combine multiple PDF documents into one single file.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Combine PDF</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 10: Compress PDF -->
+                    <a href="compress-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="compress-pdf" data-category="convert" data-title="Compress PDF Reduce size small shrink">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-archive" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Compress PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Shrink document MBs with selectable compression ratios.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Shrink PDF</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 11: PDF to Word -->
+                    <a href="pdf-to-word.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="pdf-to-word" data-category="convert" data-title="PDF to Word DOC DOCX Converter text">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-text" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                PDF to Word
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Extract document text and layout into editable Word (.docx).
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>To DOCX</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 12: Word to PDF -->
+                    <a href="word-to-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="word-to-pdf" data-category="convert" data-title="Word to PDF DOC DOCX convert file">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-type-2" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Word to PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Convert Word documents (.doc, .docx) into clean PDFs.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>DOC to PDF</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 13: PDF to JPG -->
+                    <a href="pdf-to-jpg.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="pdf-to-jpg" data-category="convert image-tools" data-title="PDF to JPG Image PNG extract photo">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-rose-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="image" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                PDF to JPG
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Render pages into high-resolution image snapshots (.jpg/.png).
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>To Images</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 14: Protect PDF -->
+                    <a href="protect-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="protect-pdf" data-category="edit-sign" data-title="Protect PDF Password Encrypt Security lock">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-600 to-indigo-700 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="lock" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Protect PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Encrypt document with custom security password protection.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Password Lock</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 15: Split PDF -->
+                    <a href="split-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="split-pdf" data-category="organize-pages" data-title="Split PDF Separate pages range cut">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-yellow-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="scissors" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Split PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Extract custom page ranges into individual PDF files.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Split Document</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 16: Rotate PDF -->
+                    <a href="rotate-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="rotate-pdf" data-category="organize-pages" data-title="Rotate PDF Orientation turn orientation">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="rotate-cw" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Rotate PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Rotate document pages 90°, 180° or 270° clockwise.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Change Angle</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 17: Text to PDF -->
+                    <a href="text-to-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="text-to-pdf" data-category="convert" data-title="Text to PDF TXT document creator">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="file-code-2" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Text to PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Package plain text files (.txt) into formatted PDFs.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>TXT to PDF</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                    <!-- Tool 18: Unlock PDF -->
+                    <a href="unlock-pdf.html" class="tool-card group relative p-5 rounded-2xl glass-card hover:border-brand-500/60 hover:shadow-glow-brand transition-all duration-300 flex flex-col justify-between cursor-pointer" data-tool-id="unlock-pdf" data-category="edit-sign" data-title="Unlock PDF Remove password decrypt">
+                        <div>
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-fuchsia-600 to-pink-500 flex items-center justify-center text-white mb-4 shadow-lg group-hover:scale-110 transition-transform">
+                                <i data-lucide="unlock" class="w-6 h-6"></i>
+                            </div>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white group-hover:text-brand-500 transition-colors">
+                                Unlock PDF
+                            </h3>
+                            <p class="text-slate-600 dark:text-slate-400 text-xs mt-1 leading-relaxed">
+                                Remove passwords and unlock permissions from PDFs.
+                            </p>
+                        </div>
+                        <div class="mt-4 pt-3 border-t border-slate-200 dark:border-slate-700/50 flex items-center justify-between text-xs font-semibold text-brand-600 dark:text-brand-400">
+                            <span>Remove Lock</span>
+                            <i data-lucide="arrow-right" class="w-4 h-4 group-hover:translate-x-1 transition-transform"></i>
+                        </div>
+                    </a>
+
+                </div>
+
+                <!-- Search No Results -->
+                <div id="no-results" class="hidden text-center py-12">
+                    <div class="w-16 h-16 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center mx-auto mb-3 text-slate-400">
+                        <i data-lucide="search-x" class="w-8 h-8"></i>
+                    </div>
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">No tools found</h3>
+                    <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">Try keywords like "Resizer", "KB", "Sign", "Edit", or "Remove".</p>
+                    <button id="reset-search-btn" class="mt-4 px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-sm font-semibold transition">
+                        Reset Filters
+                    </button>
+                </div>
+
+            </div>
+        </section>
+
+        <section id="quick-drop" class="py-12 bg-slate-50 dark:bg-slate-900 relative">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                
+                <div class="bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl relative overflow-hidden">
+                    
+                    <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-6 mb-6">
+                        <div class="flex items-center space-x-3">
+                            <span class="p-2.5 rounded-xl bg-brand-500/10 text-brand-600 dark:text-brand-400 border border-brand-500/20">
+                                <i data-lucide="zap" class="w-5 h-5"></i>
+                            </span>
+                            <div>
+                                <h2 class="text-xl font-bold text-slate-900 dark:text-white">Universal Smart Dropzone</h2>
+                                <p class="text-xs text-slate-500 dark:text-slate-400">Drag any PDF or image — we'll open the right tool instantly!</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div 
+                        id="main-dropzone"
+                        class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 dark:hover:border-brand-500 rounded-2xl p-8 sm:p-12 text-center transition-all cursor-pointer bg-slate-50/50 dark:bg-slate-900/40 group relative"
+                    >
+                        <input type="file" id="main-file-input" class="hidden" multiple />
+                        
+                        <div class="w-20 h-20 rounded-2xl bg-slate-200 dark:bg-slate-800 group-hover:bg-brand-500/20 flex items-center justify-center mx-auto mb-4 transition duration-300 text-brand-600 dark:text-brand-400">
+                            <i data-lucide="upload-cloud" class="w-10 h-10"></i>
+                        </div>
+
+                        <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-1">
+                            Choose File or Drop Here
+                        </h3>
+                        <p class="text-xs sm:text-sm text-slate-500 dark:text-slate-400 max-w-md mx-auto mb-6">
+                            Supports PDF, JPG, PNG, WEBP, TXT, DOCX, XLSX.
+                        </p>
+
+                        <button type="button" class="inline-flex items-center justify-center px-6 py-3.5 rounded-xl bg-gradient-to-r from-brand-600 to-accent-purple hover:from-brand-500 hover:to-accent-purple/90 text-white font-bold text-sm shadow-lg shadow-brand-500/25 transition group-hover:scale-105">
+                            <i data-lucide="folder-open" class="w-4 h-4 mr-2"></i>
+                            Select File
+                        </button>
+                    </div>
+
+                </div>
+
+            </div>
+        </section>
+
+        <section id="recent-history" class="py-12 bg-slate-100/50 dark:bg-slate-950/40 border-y border-slate-200 dark:border-slate-800/80">
+            <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="history" class="w-5 h-5 text-brand-500"></i>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white">Recent Processed Files</h2>
+                    </div>
+                    <button id="clear-history-btn" class="text-xs font-semibold text-red-500 hover:text-red-600 transition flex items-center gap-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> Clear History
+                    </button>
+                </div>
+
+                <div id="history-list" class="space-y-3">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+        </section>
+
+        <section id="faq" class="py-16 sm:py-20 relative">
+            <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center mb-12">
+                    <span class="text-xs font-bold tracking-widest text-brand-600 dark:text-brand-400 uppercase bg-brand-500/10 px-3 py-1 rounded-full border border-brand-500/20">Questions?</span>
+                    <h2 class="text-3xl font-extrabold text-slate-900 dark:text-white mt-3">Frequently Asked Questions</h2>
+                </div>
+
+                <div class="space-y-4" id="faq-accordion">
+                    <div class="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <button class="faq-btn w-full px-6 py-4 text-left flex items-center justify-between font-bold text-slate-900 dark:text-white hover:text-brand-500 transition">
+                            <span>How does the Image Convert in KB tool work?</span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="faq-content hidden px-6 pb-4 text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed border-t border-slate-200 dark:border-slate-800/50 pt-3">
+                            The tool uses an iterative binary canvas search quality engine directly inside your browser. It automatically calculates compressed image bytes until it hits your exact specified target KB size (e.g. 50KB or 100KB) without losing unnecessary detail.
+                        </div>
+                    </div>
+
+                    <div class="glass-card rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <button class="faq-btn w-full px-6 py-4 text-left flex items-center justify-between font-bold text-slate-900 dark:text-white hover:text-brand-500 transition">
+                            <span>Is my digital signature or PDF data uploaded to external servers?</span>
+                            <i data-lucide="chevron-down" class="w-5 h-5 text-slate-400 transition-transform duration-300"></i>
+                        </button>
+                        <div class="faq-content hidden px-6 pb-4 text-slate-600 dark:text-slate-400 text-xs sm:text-sm leading-relaxed border-t border-slate-200 dark:border-slate-800/50 pt-3">
+                            No! Everything happens locally in your device memory via standard JavaScript HTML5 Web APIs. No signature, document page, or image is ever uploaded to any server.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <div id="tool-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div id="tool-modal-box" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl relative my-auto">
+            
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                <div class="flex items-center space-x-3">
+                    <div id="modal-tool-icon" class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md">
+                        <i data-lucide="file-text" class="w-5 h-5"></i>
+                    </div>
+                    <div>
+                        <h3 id="modal-tool-title" class="text-xl font-bold text-slate-900 dark:text-white">Tool Title</h3>
+                        <p id="modal-tool-desc" class="text-xs text-slate-500 dark:text-slate-400">Tool description</p>
+                    </div>
+                </div>
+                <button id="close-modal-btn" class="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white rounded-xl hover:bg-slate-200 dark:hover:bg-slate-800 transition">
+                    <i data-lucide="x" class="w-6 h-6"></i>
+                </button>
+            </div>
+
+            <!-- Modal Content Body -->
+            <div class="p-6 sm:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+                
+                <!-- File Upload Trigger -->
+                <div id="modal-drop-area" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer bg-slate-50 dark:bg-slate-950/30 transition">
+                    <input type="file" id="modal-file-input" class="hidden" multiple />
+                    <i data-lucide="upload-cloud" class="w-8 h-8 text-brand-500 mx-auto mb-2"></i>
+                    <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Click or Drag File Here</p>
+                    <p class="text-xs text-slate-500 mt-1" id="modal-file-hints">Supports JPG, PNG, WEBP, PDF, TXT</p>
+                </div>
+
+                <!-- File Preview List -->
+                <div id="file-preview-list" class="space-y-2">
+                    <!-- Dynamic file items -->
+                </div>
+
+                <!-- Custom Interactive Workspace (Resizer / KB / Signature / Organise / Edit) -->
+                <div id="tool-options-container" class="p-4 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+                    <!-- Injected dynamically per active tool -->
+                </div>
+
+                <!-- Progress Bar -->
+                <div id="modal-progress-container" class="hidden space-y-2">
+                    <div class="flex justify-between text-xs font-semibold text-slate-700 dark:text-slate-300">
+                        <span id="modal-status-text">Processing File...</span>
+                        <span id="modal-progress-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-200 dark:bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div id="modal-progress-bar" class="bg-gradient-to-r from-brand-500 to-accent-pink h-full w-0 transition-all duration-200"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex items-center justify-end space-x-3">
+                <button id="modal-cancel-btn" class="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl transition">
+                    Cancel
+                </button>
+                <button id="modal-convert-btn" disabled class="px-6 py-2.5 text-xs font-bold text-white bg-brand-600 hover:bg-brand-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl shadow-lg shadow-brand-500/25 transition flex items-center gap-2">
+                    <i data-lucide="play" class="w-4 h-4"></i>
+                    <span>Execute Tool & Download</span>
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <footer class="bg-slate-950 border-t border-slate-800/80 pt-10 pb-8 text-slate-400 text-xs">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row items-center justify-between text-slate-500 text-xs gap-3">
+                <div class="flex items-center space-x-2">
+                    <i data-lucide="file-text" class="w-5 h-5 text-brand-500"></i>
+                    <span class="text-slate-300 font-bold text-sm">epdfconverter.com</span>
+                    <span>— PDF & Image Studio</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="flex items-center gap-1 text-emerald-400"><i data-lucide="shield-check" class="w-4 h-4"></i> 100% Client Security</span>
+                    <span>•</span>
+                    <span>v2.5 Full Suite</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>window.EPDF_OPEN_TOOL = "rotate-pdf";</script>
+    <script src="../js/app.js"></script>
+
+</body>
+</html>
