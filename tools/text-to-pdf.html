@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="en" class="dark scroll-smooth">
+<html lang="en" class="dark scroll-smooth tool-page-mode">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=1280">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Text to PDF - Free Online Tool | epdfconverter.com</title>
     <meta name="description" content="Convert plain text (.txt) files into formatted PDF documents. Free online TXT to PDF converter.">
     <meta name="keywords" content="text to pdf, txt to pdf, epdfconverter, pdf tools">
@@ -161,9 +161,14 @@
             background: #ffffff;
             box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
         }
-        .pdf-edit-page img {
+        .pdf-edit-page img,
+        .pdf-edit-page canvas {
             display: block;
             max-width: none;
+        }
+        canvas#pdf-preview {
+            background: #ffffff;
+            box-shadow: 0 8px 28px rgba(0, 0, 0, 0.28);
         }
         .pdf-edit-text {
             position: absolute;
@@ -188,6 +193,129 @@
             background: #ffffff;
             box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.35);
             z-index: 6;
+        }
+
+        html.tool-page-mode #top-tools,
+        html.tool-page-mode #quick-drop,
+        html.tool-page-mode #recent-history,
+        html.tool-page-mode #faq {
+            display: none !important;
+        }
+        html.tool-page-mode main,
+        html.tool-page-mode footer {
+            display: none !important;
+        }
+        html.tool-page-mode #tool-modal {
+            position: relative !important;
+            inset: auto !important;
+            display: flex !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            padding: 0 !important;
+            overflow: visible !important;
+            z-index: 1 !important;
+            flex: 1 1 auto;
+            min-height: calc(100vh - 5rem);
+            align-items: stretch !important;
+        }
+        html.tool-page-mode #tool-modal-box {
+            max-width: none !important;
+            width: 100%;
+            margin: 0;
+            border-radius: 0 !important;
+            border-left: 0 !important;
+            border-right: 0 !important;
+            min-height: calc(100vh - 5rem);
+            display: flex;
+            flex-direction: column;
+            box-shadow: none;
+        }
+        html.tool-page-mode #tool-modal-box > div:nth-child(2) {
+            max-height: none !important;
+            overflow: visible !important;
+            flex: 1 1 auto;
+            display: flex;
+            flex-direction: column;
+        }
+        html.tool-page-mode #modal-drop-area:not(.hidden) {
+            flex: 1 1 auto;
+            min-height: calc(100vh - 280px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 4rem 1.5rem !important;
+        }
+        html.tool-page-mode #modal-drop-area.hidden,
+        #modal-drop-area.hidden,
+        #workspace-preview.hidden,
+        #file-preview-list.hidden,
+        #tool-options-container.hidden,
+        #tool-modal-header.hidden,
+        #tool-modal-footer.hidden {
+            display: none !important;
+        }
+        html.preview-active #modal-drop-area,
+        html.preview-active #file-preview-list {
+            display: none !important;
+        }
+        html.preview-active.tool-page-mode #tool-modal-header,
+        html.preview-edit-pdf #tool-modal-header,
+        html.preview-edit-pdf #tool-modal-footer,
+        html.preview-edit-pdf #tool-options-container,
+        html.preview-edit-pdf #modal-progress-container {
+            display: none !important;
+        }
+        html.preview-edit-pdf.tool-page-mode #tool-modal-box {
+            border: 0 !important;
+            min-height: calc(100vh - 5rem);
+            background: transparent !important;
+            box-shadow: none !important;
+            border-radius: 0 !important;
+        }
+        html.preview-edit-pdf.tool-page-mode #tool-modal-box > #tool-modal-body,
+        html.preview-edit-pdf #tool-modal-body {
+            padding: 0 !important;
+            max-height: none !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 auto !important;
+        }
+        html.preview-edit-pdf #tool-modal-body > * {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+        }
+        html.preview-active #workspace-preview {
+            flex: 1 1 auto;
+            display: flex !important;
+            flex-direction: column;
+        }
+        html.preview-edit-pdf #workspace-preview {
+            min-height: calc(100vh - 5rem) !important;
+        }
+        html.preview-edit-pdf #edit-canvas-preview {
+            flex: 1 1 auto;
+            min-height: calc(100vh - 8rem);
+            max-height: none !important;
+            border: 0 !important;
+            background: #eef2f7 !important;
+        }
+        html.preview-edit-pdf #pdf-edit-page-wrap,
+        html.preview-edit-pdf canvas#pdf-preview {
+            box-shadow: none;
+        }
+        #modal-drop-area:not(.hidden) {
+            min-height: 50vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        #tool-modal #tool-modal-box {
+            max-width: min(96vw, 80rem);
+            min-height: min(88vh, 920px);
         }
     </style>
 </head>
@@ -783,11 +911,11 @@
 
     </main>
 
-    <div id="tool-modal" class="fixed inset-0 z-50 hidden bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-        <div id="tool-modal-box" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl relative my-auto">
+    <div id="tool-modal" class="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+        <div id="tool-modal-box" class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-3xl overflow-hidden shadow-2xl relative my-auto max-w-6xl">
             
             <!-- Modal Header -->
-            <div class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+            <div id="tool-modal-header" class="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
                 <div class="flex items-center space-x-3">
                     <div id="modal-tool-icon" class="w-10 h-10 rounded-xl bg-brand-600 text-white flex items-center justify-center shadow-md">
                         <i data-lucide="file-text" class="w-5 h-5"></i>
@@ -803,7 +931,7 @@
             </div>
 
             <!-- Modal Content Body -->
-            <div class="p-6 sm:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
+            <div id="tool-modal-body" class="p-6 sm:p-8 space-y-6 max-h-[75vh] overflow-y-auto">
                 
                 <!-- File Upload Trigger -->
                 <div id="modal-drop-area" class="border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-brand-500 rounded-2xl p-6 text-center cursor-pointer bg-slate-50 dark:bg-slate-950/30 transition">
@@ -812,6 +940,8 @@
                     <p class="text-sm font-bold text-slate-800 dark:text-slate-200">Click or Drag File Here</p>
                     <p class="text-xs text-slate-500 mt-1" id="modal-file-hints">Supports JPG, PNG, WEBP, PDF, TXT</p>
                 </div>
+
+                <div id="workspace-preview" class="hidden flex-1 flex flex-col min-h-0"></div>
 
                 <!-- File Preview List -->
                 <div id="file-preview-list" class="space-y-2">
@@ -837,7 +967,7 @@
             </div>
 
             <!-- Modal Footer -->
-            <div class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex items-center justify-end space-x-3">
+            <div id="tool-modal-footer" class="p-6 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 flex items-center justify-end space-x-3">
                 <button id="modal-cancel-btn" class="px-5 py-2.5 text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white rounded-xl transition">
                     Cancel
                 </button>
@@ -868,7 +998,7 @@
     </footer>
 
     <script>window.EPDF_OPEN_TOOL = "text-to-pdf";</script>
-    <script src="../js/app.js"></script>
+    <script src="../js/app.js?v=preview3"></script>
 
 </body>
 </html>

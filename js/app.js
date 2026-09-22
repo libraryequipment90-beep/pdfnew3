@@ -1,10 +1,19 @@
-        lucide.createIcons();
+        function refreshIcons() {
+            if (window.lucide && typeof lucide.createIcons === 'function') lucide.createIcons();
+        }
+        refreshIcons();
+
+        if (window.EPDF_OPEN_TOOL) {
+            document.documentElement.classList.add('tool-page-mode');
+        }
 
         // Application Global State
         const state = {
             activeTool: null,
             stagedFiles: [],
-            conversionHistory: JSON.parse(localStorage.getItem('epdf_history') || '[]'),
+            conversionHistory: (function () {
+                try { return JSON.parse(localStorage.getItem('epdf_history') || '[]'); } catch (e) { return []; }
+            })(),
             currentFilter: 'all',
             // Image tool options
             resizeWidth: 800,
@@ -150,21 +159,7 @@
                 icon: 'file-edit',
                 accept: '.pdf, application/pdf',
                 hint: 'Select PDF document to edit',
-                optionsHtml: `
-                    <div class="space-y-3">
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <label class="text-xs font-bold text-slate-700 dark:text-slate-300">Click existing text on the page to edit it:</label>
-                            <div class="flex items-center gap-2">
-                                <button type="button" id="edit-prev-page" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-brand-600 hover:text-white transition">Prev</button>
-                                <span id="edit-page-label" class="text-[11px] font-extrabold text-brand-500 min-w-[88px] text-center">Page 0 / 0</span>
-                                <button type="button" id="edit-next-page" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-brand-600 hover:text-white transition">Next</button>
-                            </div>
-                        </div>
-                        <div id="edit-canvas-preview" class="p-3 border border-slate-300 dark:border-slate-700 rounded-xl max-h-[70vh] overflow-auto flex justify-center bg-slate-200/50 dark:bg-slate-900">
-                            <p class="text-xs text-slate-400 text-center py-4">Upload PDF to render full page preview...</p>
-                        </div>
-                    </div>
-                `
+                optionsHtml: `<p class="text-xs text-slate-500 dark:text-slate-400">Upload a PDF to open the full-page editor. Click existing text on the page to edit it.</p>`
             },
             'jpg-to-pdf': {
                 title: 'JPG to PDF Converter',
@@ -292,11 +287,13 @@
             
             // Theme Mode Setup
             const themeToggleBtn = document.getElementById('theme-toggle');
-            themeToggleBtn.addEventListener('click', () => {
-                document.documentElement.classList.toggle('dark');
-                const isDark = document.documentElement.classList.contains('dark');
-                localStorage.setItem('epdf_theme', isDark ? 'dark' : 'light');
-            });
+            if (themeToggleBtn) {
+                themeToggleBtn.addEventListener('click', () => {
+                    document.documentElement.classList.toggle('dark');
+                    const isDark = document.documentElement.classList.contains('dark');
+                    localStorage.setItem('epdf_theme', isDark ? 'dark' : 'light');
+                });
+            }
 
             if (localStorage.getItem('epdf_theme') === 'light') {
                 document.documentElement.classList.remove('dark');
@@ -318,12 +315,13 @@
             const resetSearchBtn = document.getElementById('reset-search-btn');
 
             function filterTools() {
+                if (!searchInput) return;
                 const q = searchInput.value.toLowerCase().trim();
                 let count = 0;
 
                 toolCards.forEach(card => {
-                    const title = card.getAttribute('data-title').toLowerCase();
-                    const category = card.getAttribute('data-category');
+                    const title = (card.getAttribute('data-title') || '').toLowerCase();
+                    const category = card.getAttribute('data-category') || '';
 
                     const matchesSearch = title.includes(q);
                     const matchesCategory = (state.currentFilter === 'all') || category.includes(state.currentFilter);
@@ -336,18 +334,24 @@
                     }
                 });
 
-                if (count === 0) noResults.classList.remove('hidden');
-                else noResults.classList.add('hidden');
+                if (noResults) {
+                    if (count === 0) noResults.classList.remove('hidden');
+                    else noResults.classList.add('hidden');
+                }
 
-                if (q.length > 0) clearSearchBtn.classList.remove('hidden');
-                else clearSearchBtn.classList.add('hidden');
+                if (clearSearchBtn) {
+                    if (q.length > 0) clearSearchBtn.classList.remove('hidden');
+                    else clearSearchBtn.classList.add('hidden');
+                }
             }
 
-            searchInput.addEventListener('input', filterTools);
-            clearSearchBtn.addEventListener('click', () => {
-                searchInput.value = '';
-                filterTools();
-            });
+            if (searchInput) searchInput.addEventListener('input', filterTools);
+            if (clearSearchBtn) {
+                clearSearchBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    filterTools();
+                });
+            }
 
             if (resetSearchBtn) {
                 resetSearchBtn.addEventListener('click', () => {
@@ -384,21 +388,156 @@
             const modalDropArea = document.getElementById('modal-drop-area');
             const modalFileInput = document.getElementById('modal-file-input');
             const filePreviewList = document.getElementById('file-preview-list');
+            const workspacePreview = document.getElementById('workspace-preview');
             const PAGE_PREVIEW_TOOLS = ['organise-pages', 'remove-pages', 'edit-pdf'];
+            const IMAGE_PREVIEW_TOOLS = ['image-resizer', 'image-convert-kb', 'compress-image', 'jpg-to-pdf'];
 
             function isPdfFile(f) {
                 return f && ((f.type === 'application/pdf') || (f.name || '').toLowerCase().endsWith('.pdf'));
             }
 
+            function isImageFile(f) {
+                return f && (((f.type || '').startsWith('image/')) || /\.(jpe?g|png|webp|gif)$/i.test(f.name || ''));
+            }
+
+            function setPreviewChrome(on) {
+                const header = document.getElementById('tool-modal-header');
+                const footer = document.getElementById('tool-modal-footer');
+                const body = document.getElementById('tool-modal-body');
+                const optionsBox = document.getElementById('tool-options-container');
+                const progress = document.getElementById('modal-progress-container');
+                const modalBox = document.getElementById('tool-modal-box');
+                const toolId = state.activeTool;
+                const editMode = on && toolId === 'edit-pdf';
+                function setDisp(el, value) {
+                    if (!el) return;
+                    if (value === '') el.style.removeProperty('display');
+                    else el.style.setProperty('display', value, 'important');
+                }
+                setDisp(modalDropArea, on ? 'none' : '');
+                setDisp(filePreviewList, on ? 'none' : '');
+                setDisp(header, (on && (editMode || isDedicatedToolPage())) ? 'none' : '');
+                setDisp(footer, editMode ? 'none' : '');
+                setDisp(optionsBox, editMode ? 'none' : '');
+                setDisp(progress, editMode ? 'none' : '');
+                document.documentElement.classList.toggle('preview-edit-pdf', editMode);
+                document.body.classList.toggle('preview-edit-pdf', editMode);
+                setDisp(workspacePreview, on ? 'flex' : '');
+                if (workspacePreview) {
+                    workspacePreview.style.flexDirection = 'column';
+                    workspacePreview.style.flex = '1 1 auto';
+                    workspacePreview.style.minHeight = editMode ? 'calc(100vh - 5rem)' : (on ? '50vh' : '');
+                    workspacePreview.style.width = '100%';
+                }
+                if (body) {
+                    body.style.padding = editMode ? '0' : '';
+                    body.style.maxHeight = on ? 'none' : '';
+                    body.style.overflow = editMode ? 'hidden' : '';
+                    body.style.flex = on ? '1 1 auto' : '';
+                    setDisp(body, on ? 'flex' : '');
+                    body.style.flexDirection = on ? 'column' : '';
+                }
+                if (modalBox && editMode) {
+                    modalBox.style.border = '0';
+                    modalBox.style.boxShadow = 'none';
+                    modalBox.style.borderRadius = '0';
+                    modalBox.style.background = 'transparent';
+                } else if (modalBox) {
+                    modalBox.style.border = '';
+                    modalBox.style.boxShadow = '';
+                    modalBox.style.borderRadius = '';
+                    modalBox.style.background = '';
+                }
+            }
+
+            function showWorkspacePreview() {
+                if (modalDropArea) modalDropArea.classList.add('hidden');
+                if (filePreviewList) filePreviewList.classList.add('hidden');
+                if (workspacePreview) workspacePreview.classList.remove('hidden');
+                document.documentElement.classList.add('preview-active');
+                document.body.classList.add('preview-active');
+                setPreviewChrome(true);
+            }
+
+            function hideWorkspacePreview() {
+                if (workspacePreview) {
+                    workspacePreview.classList.add('hidden');
+                    workspacePreview.innerHTML = '';
+                }
+                if (modalDropArea) modalDropArea.classList.remove('hidden');
+                if (filePreviewList) filePreviewList.classList.remove('hidden');
+                document.documentElement.classList.remove('preview-active');
+                document.body.classList.remove('preview-active');
+                document.documentElement.classList.remove('preview-edit-pdf');
+                document.body.classList.remove('preview-edit-pdf');
+                setPreviewChrome(false);
+            }
+
             function updatePreviewToolLayout() {
                 const toolId = state.activeTool;
-                const hasPdf = state.stagedFiles.some(isPdfFile);
-                if (PAGE_PREVIEW_TOOLS.includes(toolId) && hasPdf) {
-                    modalDropArea.classList.add('hidden');
-                    filePreviewList.classList.add('hidden');
-                } else {
-                    modalDropArea.classList.remove('hidden');
-                    filePreviewList.classList.remove('hidden');
+                const file = state.stagedFiles[0];
+                const optionsBox = document.getElementById('tool-options-container');
+                if (!file) {
+                    hideWorkspacePreview();
+                    if (optionsBox) optionsBox.classList.remove('hidden');
+                    return;
+                }
+                if (isPdfFile(file) || (IMAGE_PREVIEW_TOOLS.includes(toolId) && isImageFile(file))) {
+                    showWorkspacePreview();
+                    if (optionsBox) {
+                        if (toolId === 'edit-pdf') optionsBox.classList.add('hidden');
+                        else optionsBox.classList.remove('hidden');
+                    }
+                    return;
+                }
+                hideWorkspacePreview();
+                if (optionsBox) optionsBox.classList.remove('hidden');
+            }
+
+            function renderImageWorkspacePreview(file) {
+                if (!workspacePreview) return;
+                showWorkspacePreview();
+                const url = URL.createObjectURL(file);
+                workspacePreview.innerHTML = `
+                    <div class="flex-1 flex items-center justify-center bg-slate-100 dark:bg-slate-950 overflow-auto min-h-[50vh] p-4">
+                        <img src="${url}" alt="Uploaded image preview" class="max-w-full max-h-[72vh] object-contain rounded-xl shadow-lg bg-white" />
+                    </div>
+                `;
+            }
+
+            async function renderGenericPdfPreview(file) {
+                if (!workspacePreview) return;
+                showWorkspacePreview();
+                workspacePreview.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Loading PDF preview...</p>';
+                try {
+                    const pdfDoc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                    const grid = document.createElement('div');
+                    grid.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-2 overflow-auto min-h-[50vh]';
+                    const limit = Math.min(pdfDoc.numPages, 40);
+                    for (let i = 1; i <= limit; i++) {
+                        const page = await pdfDoc.getPage(i);
+                        const viewport = page.getViewport({ scale: 0.45 });
+                        const canvas = document.createElement('canvas');
+                        canvas.width = viewport.width;
+                        canvas.height = viewport.height;
+                        await page.render({ canvasContext: canvas.getContext('2d'), viewport: viewport }).promise;
+                        const card = document.createElement('div');
+                        card.className = 'relative p-2 rounded-xl bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 flex flex-col items-center';
+                        const img = document.createElement('img');
+                        img.src = canvas.toDataURL('image/jpeg', 0.8);
+                        img.className = 'w-full object-contain rounded border border-slate-300 dark:border-slate-700 shadow-sm bg-white';
+                        img.alt = 'Page ' + i;
+                        const label = document.createElement('span');
+                        label.className = 'text-[10px] font-bold text-slate-500 mt-1';
+                        label.textContent = 'Page ' + i;
+                        card.appendChild(img);
+                        card.appendChild(label);
+                        grid.appendChild(card);
+                    }
+                    workspacePreview.innerHTML = '';
+                    workspacePreview.appendChild(grid);
+                } catch (err) {
+                    workspacePreview.innerHTML = '<p class="text-xs text-red-400 text-center py-8">Could not preview this PDF.</p>';
                 }
             }
 
@@ -411,11 +550,8 @@
             }
 
             function enableFullPageToolMode() {
-                if (document.body.classList.contains('tool-page-mode')) return;
                 document.body.classList.add('tool-page-mode');
-                const style = document.createElement('style');
-                style.textContent = '.tool-page-mode #top-tools,.tool-page-mode #quick-drop,.tool-page-mode #recent-history,.tool-page-mode #faq{display:none!important}.tool-page-mode #tool-modal{position:relative!important;inset:auto!important;display:flex!important;background:transparent!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;padding:1.5rem 1rem 2.5rem!important;overflow:visible!important;z-index:1!important}.tool-page-mode #tool-modal-box{max-width:72rem!important;width:100%;margin:0 auto;box-shadow:0 18px 50px rgba(15,23,42,.18)}.tool-page-mode #tool-modal-box > div:nth-child(2){max-height:none!important;overflow:visible!important}';
-                document.head.appendChild(style);
+                document.documentElement.classList.add('tool-page-mode');
             }
 
             function openToolModal(toolId, initialFiles = []) {
@@ -443,8 +579,8 @@
 
                 renderStagedFiles();
                 updatePreviewToolLayout();
-                modal.classList.remove('hidden');
-                lucide.createIcons();
+                if (modal) modal.classList.remove('hidden');
+                refreshIcons();
 
                 // Bind tool-specific UI events
                 bindToolOptionEvents(toolId);
@@ -466,8 +602,8 @@
                 if (modalBox) modalBox.classList.remove('max-w-6xl');
             }
 
-            closeModalBtn.addEventListener('click', closeModal);
-            modalCancelBtn.addEventListener('click', closeModal);
+            if (closeModalBtn) closeModalBtn.addEventListener('click', closeModal);
+            if (modalCancelBtn) modalCancelBtn.addEventListener('click', closeModal);
 
             toolCards.forEach(card => {
                 card.addEventListener('click', (e) => {
@@ -488,61 +624,72 @@
                 openToolModal(window.EPDF_OPEN_TOOL);
             }
 
-            modalDropArea.addEventListener('click', () => modalFileInput.click());
+            if (modalDropArea && modalFileInput) {
+                modalDropArea.addEventListener('click', () => modalFileInput.click());
+            }
             function afterFilesStaged() {
                 renderStagedFiles();
                 updatePreviewToolLayout();
                 const toolId = state.activeTool;
                 const f = state.stagedFiles[0];
                 if (!f) return;
-                if (toolId === 'edit-pdf') {
-                    if (isPdfFile(f)) loadEditPdfWorkspace(f);
-                } else if (toolId === 'organise-pages' || toolId === 'remove-pages') {
-                    if (isPdfFile(f)) loadPDFPagesPreview(f, toolId);
-                } else if (toolId === 'image-resizer') {
-                    const wInput = document.getElementById('input-resize-w');
-                    const hInput = document.getElementById('input-resize-h');
-                    if (wInput && hInput && (f.type || '').startsWith('image/')) {
-                        const img = new Image();
-                        img.src = URL.createObjectURL(f);
-                        img.onload = () => {
-                            wInput.value = img.width;
-                            hInput.value = img.height;
-                            state.resizeWidth = img.width;
-                            state.resizeHeight = img.height;
-                        };
+                if (isPdfFile(f)) {
+                    if (toolId === 'edit-pdf') loadEditPdfWorkspace(f);
+                    else if (toolId === 'organise-pages' || toolId === 'remove-pages') loadPDFPagesPreview(f, toolId);
+                    else renderGenericPdfPreview(f);
+                    return;
+                }
+                if (IMAGE_PREVIEW_TOOLS.includes(toolId) && isImageFile(f)) {
+                    renderImageWorkspacePreview(f);
+                    if (toolId === 'image-resizer') {
+                        const wInput = document.getElementById('input-resize-w');
+                        const hInput = document.getElementById('input-resize-h');
+                        if (wInput && hInput) {
+                            const img = new Image();
+                            img.src = URL.createObjectURL(f);
+                            img.onload = () => {
+                                wInput.value = img.width;
+                                hInput.value = img.height;
+                                state.resizeWidth = img.width;
+                                state.resizeHeight = img.height;
+                            };
+                        }
+                    } else if (toolId === 'compress-image') {
+                        updateEstImageSize();
                     }
-                } else if (toolId === 'compress-image') {
-                    updateEstImageSize();
                 }
             }
 
-            modalFileInput.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    state.stagedFiles.push(...Array.from(e.target.files));
-                    afterFilesStaged();
-                    e.target.value = '';
-                }
-            });
+            if (modalFileInput) {
+                modalFileInput.addEventListener('change', (e) => {
+                    if (e.target.files.length > 0) {
+                        state.stagedFiles.push(...Array.from(e.target.files));
+                        afterFilesStaged();
+                        e.target.value = '';
+                    }
+                });
+            }
 
-            ['dragenter', 'dragover'].forEach(evt => {
-                modalDropArea.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    modalDropArea.classList.add('drag-active');
+            if (modalDropArea) {
+                ['dragenter', 'dragover'].forEach(evt => {
+                    modalDropArea.addEventListener(evt, (e) => {
+                        e.preventDefault();
+                        modalDropArea.classList.add('drag-active');
+                    });
                 });
-            });
-            ['dragleave', 'drop'].forEach(evt => {
-                modalDropArea.addEventListener(evt, (e) => {
-                    e.preventDefault();
-                    modalDropArea.classList.remove('drag-active');
+                ['dragleave', 'drop'].forEach(evt => {
+                    modalDropArea.addEventListener(evt, (e) => {
+                        e.preventDefault();
+                        modalDropArea.classList.remove('drag-active');
+                    });
                 });
-            });
-            modalDropArea.addEventListener('drop', (e) => {
-                if (e.dataTransfer.files.length > 0) {
-                    state.stagedFiles.push(...Array.from(e.dataTransfer.files));
-                    afterFilesStaged();
-                }
-            });
+                modalDropArea.addEventListener('drop', (e) => {
+                    if (e.dataTransfer.files.length > 0) {
+                        state.stagedFiles.push(...Array.from(e.dataTransfer.files));
+                        afterFilesStaged();
+                    }
+                });
+            }
 
             function bindToolOptionEvents(toolId) {
                 if (toolId === 'image-convert-kb') {
@@ -613,10 +760,6 @@
                     if (state.stagedFiles[0] && isPdfFile(state.stagedFiles[0])) {
                         loadEditPdfWorkspace(state.stagedFiles[0]);
                     }
-                    const prevBtn = document.getElementById('edit-prev-page');
-                    const nextBtn = document.getElementById('edit-next-page');
-                    if (prevBtn) prevBtn.addEventListener('click', () => shiftEditPdfPage(-1));
-                    if (nextBtn) nextBtn.addEventListener('click', () => shiftEditPdfPage(1));
                 } else if (toolId === 'organise-pages' || toolId === 'remove-pages') {
                     if (state.stagedFiles[0] && isPdfFile(state.stagedFiles[0])) {
                         loadPDFPagesPreview(state.stagedFiles[0], toolId);
@@ -650,20 +793,31 @@
                 const clearBtn = document.getElementById('clear-sig-btn');
                 if (!canvas) return;
 
-                const ctx = canvas.getContext('2d');
-                ctx.lineWidth = 3;
-                ctx.strokeStyle = '#000000';
-                ctx.lineCap = 'round';
-
+                function fitCanvas() {
+                    const rect = canvas.getBoundingClientRect();
+                    const dpr = window.devicePixelRatio || 1;
+                    const w = Math.max(Math.round(rect.width), 300);
+                    const h = Math.max(Math.round(rect.height), 140);
+                    canvas.width = Math.round(w * dpr);
+                    canvas.height = Math.round(h * dpr);
+                    const ctx = canvas.getContext('2d');
+                    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+                    ctx.lineWidth = 3;
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineCap = 'round';
+                    ctx.lineJoin = 'round';
+                    state.sigCtx = ctx;
+                }
+                fitCanvas();
+                const ctx = state.sigCtx;
                 let isDrawing = false;
 
                 function getPos(e) {
                     const rect = canvas.getBoundingClientRect();
-                    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
-                    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                    const src = (e.touches && e.touches[0]) ? e.touches[0] : e;
                     return {
-                        x: clientX - rect.left,
-                        y: clientY - rect.top
+                        x: src.clientX - rect.left,
+                        y: src.clientY - rect.top
                     };
                 }
 
@@ -696,7 +850,10 @@
 
                 if (clearBtn) {
                     clearBtn.addEventListener('click', () => {
+                        ctx.save();
+                        ctx.setTransform(1, 0, 0, 1, 0, 0);
                         ctx.clearRect(0, 0, canvas.width, canvas.height);
+                        ctx.restore();
                     });
                 }
 
@@ -705,19 +862,17 @@
 
             async function loadPDFPagesPreview(file, toolId) {
                 try {
+                    showWorkspacePreview();
+                    if (workspacePreview) workspacePreview.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Loading PDF pages...</p>';
                     const arrayBuffer = await file.arrayBuffer();
                     const pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     
                     state.pdfPages = [];
-                    const gridContainer = document.getElementById('page-grid-preview') || document.getElementById('remove-grid-preview') || document.getElementById('edit-canvas-preview');
-                    if (!gridContainer) return;
-
-                    gridContainer.innerHTML = '';
 
                     const previewLimit = Math.min(pdfDoc.numPages, 40);
                     for (let i = 1; i <= previewLimit; i++) {
                         const page = await pdfDoc.getPage(i);
-                        const viewport = page.getViewport({ scale: 0.3 });
+                        const viewport = page.getViewport({ scale: 0.45 });
                         const canvas = document.createElement('canvas');
                         const ctx = canvas.getContext('2d');
                         canvas.height = viewport.height;
@@ -736,14 +891,16 @@
                     renderPageGridUI(toolId);
                 } catch (err) {
                     console.warn("PDF Page Preview Load Warning:", err);
+                    if (workspacePreview) workspacePreview.innerHTML = '<p class="text-xs text-red-400 text-center py-8">Could not preview this PDF.</p>';
                 }
             }
 
             function renderPageGridUI(toolId) {
-                const gridContainer = document.getElementById('page-grid-preview') || document.getElementById('remove-grid-preview');
+                const gridContainer = workspacePreview || document.getElementById('page-grid-preview') || document.getElementById('remove-grid-preview');
                 if (!gridContainer) return;
-
+                showWorkspacePreview();
                 gridContainer.innerHTML = '';
+                gridContainer.className = 'grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 p-2 overflow-auto min-h-[50vh]';
 
                 state.pdfPages.forEach((p, index) => {
                     if (toolId === 'remove-pages' && p.removed) return;
@@ -751,7 +908,7 @@
                     const card = document.createElement('div');
                     card.className = 'relative p-2 rounded-xl bg-slate-200 dark:bg-slate-900 border border-slate-300 dark:border-slate-800 flex flex-col items-center group';
                     card.innerHTML = `
-                        <img src="${p.dataUrl}" class="h-28 object-contain rounded border border-slate-300 dark:border-slate-700 shadow-sm" />
+                        <img src="${p.dataUrl}" class="w-full object-contain rounded border border-slate-300 dark:border-slate-700 shadow-sm bg-white" />
                         <span class="text-[10px] font-bold text-slate-500 mt-1">Page ${p.pageNum}</span>
                         ${toolId === 'remove-pages' ? `
                             <button class="remove-page-btn absolute top-1 right-1 p-1.5 rounded-lg bg-red-600 text-white shadow hover:scale-110 transition" data-index="${index}">
@@ -801,17 +958,18 @@
                     });
                 }
 
-                lucide.createIcons();
+                refreshIcons();
             }
 
             function renderStagedFiles() {
+                if (!filePreviewList) return;
                 filePreviewList.innerHTML = '';
                 if (state.stagedFiles.length === 0) {
-                    modalConvertBtn.disabled = true;
+                    if (modalConvertBtn) modalConvertBtn.disabled = true;
                     return;
                 }
 
-                modalConvertBtn.disabled = false;
+                if (modalConvertBtn) modalConvertBtn.disabled = false;
 
                 state.stagedFiles.forEach((file, index) => {
                     const item = document.createElement('div');
@@ -834,14 +992,19 @@
                         e.stopPropagation();
                         const idx = parseInt(btn.getAttribute('data-index'));
                         state.stagedFiles.splice(idx, 1);
+                        if (state.stagedFiles.length === 0) {
+                            state.pdfPages = [];
+                            state.editPdf = null;
+                        }
                         renderStagedFiles();
+                        updatePreviewToolLayout();
                     });
                 });
 
-                lucide.createIcons();
+                refreshIcons();
             }
 
-            modalConvertBtn.addEventListener('click', async () => {
+            if (modalConvertBtn) modalConvertBtn.addEventListener('click', async () => {
                 if (state.stagedFiles.length === 0) return;
 
                 const progressContainer = document.getElementById('modal-progress-container');
@@ -862,30 +1025,27 @@
                     progressPercent.innerText = pct + '%';
                 }, 150);
 
-                setTimeout(async () => {
+                try {
+                    await executeSelectedToolEngine();
                     clearInterval(interval);
                     progressBar.style.width = '100%';
                     progressPercent.innerText = '100%';
                     statusText.innerText = 'Done! Preparing Download...';
-
-                    try {
-                        await executeSelectedToolEngine();
-                        setTimeout(() => {
-                            if (isDedicatedToolPage()) {
-                                progressContainer.classList.add('hidden');
-                                progressBar.style.width = '0%';
-                                modalConvertBtn.disabled = state.stagedFiles.length === 0;
-                            } else {
-                                closeModal();
-                            }
-                        }, 800);
-                    } catch (err) {
-                        clearInterval(interval);
-                        progressContainer.classList.add('hidden');
-                        modalConvertBtn.disabled = false;
-                        alert('Could not process this file: ' + (err && err.message ? err.message : 'Unknown error'));
-                    }
-                }, 1000);
+                    setTimeout(() => {
+                        if (isDedicatedToolPage()) {
+                            progressContainer.classList.add('hidden');
+                            progressBar.style.width = '0%';
+                            modalConvertBtn.disabled = state.stagedFiles.length === 0;
+                        } else {
+                            closeModal();
+                        }
+                    }, 800);
+                } catch (err) {
+                    clearInterval(interval);
+                    progressContainer.classList.add('hidden');
+                    modalConvertBtn.disabled = false;
+                    alert('Could not process this file: ' + (err && err.message ? err.message : 'Unknown error'));
+                }
             });
 
             async function executeSelectedToolEngine() {
@@ -1112,61 +1272,99 @@
                 return blocks;
             }
 
+            function getEditPreviewHost() {
+                return workspacePreview || document.getElementById('edit-canvas-preview');
+            }
+
+            function readFileAsArrayBuffer(file) {
+                return new Promise((resolve, reject) => {
+                    const fileReader = new FileReader();
+                    fileReader.onload = function () { resolve(this.result); };
+                    fileReader.onerror = reject;
+                    fileReader.readAsArrayBuffer(file);
+                });
+            }
+
             async function loadEditPdfWorkspace(file) {
-                const host = document.getElementById('edit-canvas-preview');
+                const host = getEditPreviewHost();
                 if (!host) return;
-                host.innerHTML = '<p class="text-xs text-slate-400 text-center py-4">Rendering full PDF pages...</p>';
-                const pdfDoc = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+                showWorkspacePreview();
+                host.innerHTML = '<p class="text-xs text-slate-400 text-center py-8">Rendering PDF page...</p>';
+
+                const arrayBuffer = await readFileAsArrayBuffer(file);
+                const typedArray = new Uint8Array(arrayBuffer);
+                const pdf = await pdfjsLib.getDocument(typedArray).promise;
+                const scale = 1.5;
                 const pages = [];
-                const scale = 1.45;
-                for (let i = 1; i <= pdfDoc.numPages; i++) {
-                    const page = await pdfDoc.getPage(i);
+
+                for (let i = 1; i <= pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
                     const viewport = page.getViewport({ scale: scale });
-                    const canvas = document.createElement('canvas');
-                    const ctx = canvas.getContext('2d');
-                    canvas.width = viewport.width;
-                    canvas.height = viewport.height;
-                    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
                     const content = await page.getTextContent();
                     pages.push({
                         pageNum: i,
-                        dataUrl: canvas.toDataURL('image/jpeg', 0.92),
                         width: viewport.width,
                         height: viewport.height,
                         blocks: groupPdfTextItems(content.items, viewport, scale)
                     });
                 }
-                state.editPdf = { pages: pages, currentPage: 1 };
-                renderEditPdfPage();
+
+                state.editPdf = {
+                    pdf: pdf,
+                    pages: pages,
+                    currentPage: 1,
+                    scale: scale
+                };
+                await renderEditPdfPage();
             }
 
-            function shiftEditPdfPage(delta) {
+            async function shiftEditPdfPage(delta) {
                 if (!state.editPdf) return;
                 collectEditPdfTextBlocks();
                 const next = state.editPdf.currentPage + delta;
                 if (next < 1 || next > state.editPdf.pages.length) return;
                 state.editPdf.currentPage = next;
-                renderEditPdfPage();
+                await renderEditPdfPage();
             }
 
-            function renderEditPdfPage() {
-                const host = document.getElementById('edit-canvas-preview');
-                const label = document.getElementById('edit-page-label');
+            async function renderEditPdfPage() {
+                const host = getEditPreviewHost();
                 if (!host || !state.editPdf) return;
-                const page = state.editPdf.pages[state.editPdf.currentPage - 1];
-                if (label) label.innerText = 'Page ' + state.editPdf.currentPage + ' / ' + state.editPdf.pages.length;
+                const pageMeta = state.editPdf.pages[state.editPdf.currentPage - 1];
+                const total = state.editPdf.pages.length;
+                const current = state.editPdf.currentPage;
+                host.innerHTML = `
+                    <div id="edit-pdf-toolbar" class="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800">
+                        <span class="text-xs font-semibold text-slate-600 dark:text-slate-300">Click existing text on the page to edit it:</span>
+                        <div class="flex items-center gap-2">
+                            <button type="button" id="edit-prev-page" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-brand-600 hover:text-white transition">Prev</button>
+                            <span id="edit-page-label" class="text-[11px] font-extrabold text-brand-500 min-w-[88px] text-center">Page ${current} / ${total}</span>
+                            <button type="button" id="edit-next-page" class="px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-800 text-[11px] font-bold text-slate-700 dark:text-slate-300 hover:bg-brand-600 hover:text-white transition">Next</button>
+                            <button type="button" id="edit-save-pdf" class="ml-2 px-3 py-1 rounded-lg bg-brand-600 text-white text-[11px] font-bold hover:bg-brand-500 transition">Download</button>
+                        </div>
+                    </div>
+                    <div id="edit-canvas-preview" class="flex-1 overflow-auto flex justify-center items-start bg-[#eef2f7] dark:bg-slate-950"></div>
+                `;
+                const canvasHost = document.getElementById('edit-canvas-preview');
                 const wrap = document.createElement('div');
                 wrap.id = 'pdf-edit-page-wrap';
                 wrap.className = 'pdf-edit-page';
-                wrap.style.width = page.width + 'px';
-                wrap.style.height = page.height + 'px';
-                const img = document.createElement('img');
-                img.src = page.dataUrl;
-                img.width = page.width;
-                img.height = page.height;
-                img.alt = 'PDF page ' + page.pageNum;
-                wrap.appendChild(img);
-                page.blocks.forEach((block, idx) => {
+                wrap.style.width = pageMeta.width + 'px';
+                wrap.style.height = pageMeta.height + 'px';
+
+                const canvas = document.createElement('canvas');
+                canvas.id = 'pdf-preview';
+                const ctx = canvas.getContext('2d');
+                wrap.appendChild(canvas);
+                canvasHost.appendChild(wrap);
+
+                const page = await state.editPdf.pdf.getPage(current);
+                const viewport = page.getViewport({ scale: state.editPdf.scale || 1.5 });
+                canvas.height = viewport.height;
+                canvas.width = viewport.width;
+                await page.render({ canvasContext: ctx, viewport: viewport }).promise;
+
+                pageMeta.blocks.forEach((block, idx) => {
                     const el = document.createElement('div');
                     el.className = 'pdf-edit-text';
                     el.contentEditable = 'true';
@@ -1182,8 +1380,13 @@
                     });
                     wrap.appendChild(el);
                 });
-                host.innerHTML = '';
-                host.appendChild(wrap);
+                const prevBtn = document.getElementById('edit-prev-page');
+                const nextBtn = document.getElementById('edit-next-page');
+                const saveBtn = document.getElementById('edit-save-pdf');
+                if (prevBtn) prevBtn.addEventListener('click', () => shiftEditPdfPage(-1));
+                if (nextBtn) nextBtn.addEventListener('click', () => shiftEditPdfPage(1));
+                if (saveBtn && modalConvertBtn) saveBtn.addEventListener('click', () => modalConvertBtn.click());
+                refreshIcons();
             }
 
             async function engineEditPdf(file) {
@@ -1193,17 +1396,17 @@
                 collectEditPdfTextBlocks();
                 const { jsPDF } = window.jspdf;
                 let outDoc = null;
+                const scale = state.editPdf.scale || 1.5;
                 for (let i = 0; i < state.editPdf.pages.length; i++) {
-                    const page = state.editPdf.pages[i];
+                    const pageMeta = state.editPdf.pages[i];
+                    const pdfPage = await state.editPdf.pdf.getPage(i + 1);
+                    const viewport = pdfPage.getViewport({ scale: scale });
                     const canvas = document.createElement('canvas');
-                    canvas.width = page.width;
-                    canvas.height = page.height;
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
                     const ctx = canvas.getContext('2d');
-                    const img = new Image();
-                    img.src = page.dataUrl;
-                    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; });
-                    ctx.drawImage(img, 0, 0, page.width, page.height);
-                    page.blocks.forEach(block => {
+                    await pdfPage.render({ canvasContext: ctx, viewport: viewport }).promise;
+                    pageMeta.blocks.forEach(block => {
                         ctx.fillStyle = '#ffffff';
                         ctx.fillRect(block.x - 1, block.y - 1, Math.max(block.w + 4, 8), Math.max(block.h + 2, 8));
                         ctx.fillStyle = '#111111';
@@ -1215,10 +1418,10 @@
                         });
                     });
                     const dataUrl = canvas.toDataURL('image/jpeg', 0.92);
-                    const orient = page.width >= page.height ? 'landscape' : 'portrait';
-                    if (!outDoc) outDoc = new jsPDF({ orientation: orient, unit: 'px', format: [page.width, page.height] });
-                    else outDoc.addPage([page.width, page.height], orient);
-                    outDoc.addImage(dataUrl, 'JPEG', 0, 0, page.width, page.height);
+                    const orient = viewport.width >= viewport.height ? 'landscape' : 'portrait';
+                    if (!outDoc) outDoc = new jsPDF({ orientation: orient, unit: 'px', format: [viewport.width, viewport.height] });
+                    else outDoc.addPage([viewport.width, viewport.height], orient);
+                    outDoc.addImage(dataUrl, 'JPEG', 0, 0, viewport.width, viewport.height);
                 }
                 const outName = stemName(file) + '_edited.pdf';
                 outDoc.save(outName);
@@ -1460,9 +1663,7 @@
 
             // Image Compression Helpers (Binary Search Quality Calculation for Target KB)
             async function convertImageToTargetKB(file, targetKB) {
-                const img = new Image();
-                img.src = await readFileAsDataURL(file);
-                await new Promise(r => img.onload = r);
+                const img = await loadImageFromFile(file);
 
                 const canvas = document.createElement('canvas');
                 const ctx = canvas.getContext('2d');
@@ -1504,9 +1705,7 @@
             }
 
             async function resizeImageDimensions(file, w, h) {
-                const img = new Image();
-                img.src = await readFileAsDataURL(file);
-                await new Promise(r => img.onload = r);
+                const img = await loadImageFromFile(file);
 
                 const canvas = document.createElement('canvas');
                 canvas.width = w;
@@ -1518,9 +1717,7 @@
             }
 
             async function compressImageQuality(file, qualityPct) {
-                const img = new Image();
-                img.src = await readFileAsDataURL(file);
-                await new Promise(r => img.onload = r);
+                const img = await loadImageFromFile(file);
 
                 const canvas = document.createElement('canvas');
                 canvas.width = img.width;
@@ -1562,14 +1759,26 @@
 
             function autoDetectAndOpenTool(files) {
                 const firstFile = files[0];
+                if (!firstFile) return;
+                const name = (firstFile.name || '').toLowerCase();
+                const type = firstFile.type || '';
                 let detectedTool = 'compress-pdf';
 
-                if (firstFile.type.startsWith('image/')) {
+                if (type.startsWith('image/') || /\.(jpe?g|png|webp|gif)$/i.test(name)) {
                     detectedTool = 'image-convert-kb';
-                } else if (firstFile.type === 'application/pdf') {
+                } else if (type === 'application/pdf' || name.endsWith('.pdf')) {
                     detectedTool = 'compress-pdf';
+                } else if (name.endsWith('.docx') || name.endsWith('.doc')) {
+                    detectedTool = 'word-to-pdf';
+                } else if (name.endsWith('.txt') || type === 'text/plain') {
+                    detectedTool = 'text-to-pdf';
                 }
 
+                if (isDedicatedToolPage()) {
+                    state.stagedFiles = Array.from(files);
+                    afterFilesStaged();
+                    return;
+                }
                 openToolModal(detectedTool, files);
             }
 
@@ -1630,13 +1839,11 @@
 
                 historyList.querySelectorAll('.redownload-btn').forEach(btn => {
                     btn.addEventListener('click', () => {
-                        const name = btn.getAttribute('data-name');
-                        const dummyBlob = new Blob([`epdfconverter re-download for ${name}`], { type: 'application/octet-stream' });
-                        downloadBlob(dummyBlob, name);
+                        alert('Original files stay only in your browser session. Please convert the file again to download it.');
                     });
                 });
 
-                lucide.createIcons();
+                refreshIcons();
             }
 
             const clearHistBtn = document.getElementById('clear-history-btn');
@@ -1695,6 +1902,15 @@
                     reader.onerror = reject;
                     reader.readAsDataURL(file);
                 });
+            }
+
+            function loadImageFromFile(file) {
+                return readFileAsDataURL(file).then((url) => new Promise((resolve, reject) => {
+                    const img = new Image();
+                    img.onload = () => resolve(img);
+                    img.onerror = () => reject(new Error('Could not read this image file.'));
+                    img.src = url;
+                }));
             }
 
         });
